@@ -44,7 +44,7 @@ instances:
     value: |
       (ether_type_1 == ether_type_enum::ieee_802_1q_tpid) ? ether_type_2 : ether_type_1
     doc: |
-      Ether type can be specified in several places in the frame. If
+      Ether type can be specied in several places in the frame. If
       first location bears special marker (0x8100), then it is not the
       real ether frame yet, an additional payload (`tci`) is expected
       and real ether type is upcoming next.
@@ -82,4 +82,6 @@ enums:
     0x0806: arp
     0x8100: ieee_802_1q_tpid
     0x86dd: ipv6
+    # Local change: WSMP (IEEE 1609.3).  Named so it can be recognized, and otherwise left raw.
+    0x88dc: wsmp
     #0x88a8: ieee_802_1ad_tpid
