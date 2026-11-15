@@ -9,10 +9,15 @@ meta:
     pronom: fmt/779
     wikidata: Q28009435
   license: CC0-1.0
-  ks-version: '0.11'
+  ks-version: 0.8
   imports:
     - /network/ethernet_frame
     - /network/packet_ppi
+    # Local change: the outer layers of the link types below
+    - /network/radiotap
+    - /network/ieee802_11
+    - /network/linux_sll
+  endian: le
 doc: |
   PCAP (named after libpcap / winpcap) is a popular format for saving
   network traffic grabbed by network sniffers. It is typically
@@ -20,9 +25,6 @@ doc: |
   [Wireshark](https://www.wireshark.org/).
 doc-ref: https://wiki.wireshark.org/Development/LibpcapFileFormat
 seq:
-  - id: magic_number
-    type: u4be
-    enum: magic
   - id: hdr
     type: header
   - id: packets
@@ -30,16 +32,10 @@ seq:
     repeat: eos
 types:
   header:
-    meta:
-      endian:
-        switch-on: _root.magic_number
-        cases:
-          'magic::le_microseconds': le
-          'magic::le_nanoseconds': le
-          'magic::be_microseconds': be
-          'magic::be_nanoseconds': be
     doc-ref: 'https://wiki.wireshark.org/Development/LibpcapFileFormat#Global_Header'
     seq:
+      - id: magic_number
+        contents: [0xd4, 0xc3, 0xb2, 0xa1]
       - id: version_major
         type: u2
         valid:
@@ -69,33 +65,12 @@ types:
           Link-layer header type, specifying the type of headers at
           the beginning of the packet.
   packet:
-    meta:
-      endian:
-        switch-on: _root.magic_number
-        cases:
-          'magic::le_microseconds': le
-          'magic::le_nanoseconds': le
-          'magic::be_microseconds': be
-          'magic::be_nanoseconds': be
     doc-ref: 'https://wiki.wireshark.org/Development/LibpcapFileFormat#Record_.28Packet.29_Header'
     seq:
       - id: ts_sec
         type: u4
-        doc: |
-          Timestamp of a packet in seconds since 1970-01-01 00:00:00 UTC (UNIX timestamp).
-
-          In practice, some captures are not following that (e.g. because the device lacks
-          a real-time clock), so this field might represent time since device boot, start of
-          capture, or other arbitrary epoch.
       - id: ts_usec
         type: u4
-        doc: |
-          Depending on `_root.magic_number`, units for this field change:
-
-          * If it's `le_microseconds` or `be_microseconds`, this field
-            contains microseconds.
-          * If it's `le_nanoseconds` or `be_nanoseconds`, this field
-            contains nanoseconds.
       - id: incl_len
         type: u4
         doc: Number of bytes of packet data actually captured and saved in the file.
@@ -103,12 +78,17 @@ types:
         type: u4
         doc: Length of the packet as it appeared on the network when it was captured.
       - id: body
-        size: "incl_len < _root.hdr.snaplen ? incl_len : _root.hdr.snaplen"
+        # Local change: upstream clamps this to snaplen, which drops the end of records longer than
+        # snaplen and misaligns everything after them, as real captures do have such records.
+        size: incl_len
         type:
           switch-on: _root.hdr.network
           cases:
             'linktype::ppi': packet_ppi
             'linktype::ethernet': ethernet_frame
+            'linktype::ieee802_11_radiotap': radiotap
+            'linktype::ieee802_11': ieee802_11(false)
+            'linktype::linux_sll': linux_sll
         doc-ref: 'https://wiki.wireshark.org/Development/LibpcapFileFormat#Packet_Data'
 enums:
   linktype:
@@ -130,12 +110,16 @@ enums:
     99: symantec_firewall
     100: atm_rfc1483
     101: raw
+    102: slip_bsdos
+    103: ppp_bsdos
     104: c_hdlc
     105: ieee802_11
     106: atm_clip
     107: frelay
     108: loop
     109: enc
+    110: lane8023
+    111: hippi
     112: netbsd_hdlc
     113: linux_sll
     114: ltalk
@@ -145,6 +129,7 @@ enums:
     118: cisco_ios
     119: ieee802_11_prism
     120: aironet_header
+    121: hhdlc
     122: ip_over_fc
     123: sunatm
     124: rio
@@ -325,9 +310,5 @@ enums:
     297: zwave_tap
     298: silabs_debug_channel
     299: fira_uci
-  magic:
-    # https://stackoverflow.com/a/17932578
-    0xd4c3b2a1: le_microseconds
-    0x4d3cb2a1: le_nanoseconds
-    0xa1b2c3d4: be_microseconds
-    0xa1b23c4d: be_nanoseconds
+    300: mdb
+    301: dect_nr
