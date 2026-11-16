@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 meta:
-  id: link_frame
-  title: A captured packet, read by its link type
+  id: pcapng_link_frame
+  title: pcapng packet data, read by its interface's link type
   license: Apache-2.0
+  ks-version: '0.11'
   imports:
     - /network/ethernet_frame
     - /network/packet_ppi
@@ -22,16 +23,21 @@ meta:
     - /network/ieee802_11
     - /network/linux_sll
 doc: |
-  The data of one captured packet, parsed by a link type that the caller
-  supplies. A pcapng file gives each interface its own link type, and a
+  The data of one packet from a pcapng file, parsed by the link type of the
+  interface it was captured on. Pass it a packet's `packet_data` (or the
+  captured part of a Simple Packet Block's data) and the `link_type` of the
+  Interface Description Block that the packet's `interface_id` refers to.
+
+  `pcapng` can't do this itself: each interface has its own link type, and a
   Kaitai Struct expression cannot find the matching Interface Description
-  Block among a section's blocks. For that reason, `pcapng` leaves packet
-  data as raw bytes, and this spec parses it. Link types without a case here
-  stay as raw bytes.
+  Block among a section's blocks. So `pcapng` leaves packet data as raw bytes,
+  and this spec parses it. Link types without a case here stay as raw bytes.
+  The cases are the same as the link-layer cases in `pcap`'s packet body.
+doc-ref: https://www.tcpdump.org/linktypes.html
 params:
   - id: link_type
     type: u2
-    doc: A value from the tcpdump LINKTYPE registry.
+    doc: A value from the tcpdump LINKTYPE registry (`pcap::linktype`).
 seq:
   - id: body
     size-eos: true
