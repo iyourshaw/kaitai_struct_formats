@@ -34,7 +34,7 @@ seq:
   - id: reserved
     type: b4
   - id: flags
-    type: flags
+    type: tcp_flags
   - id: window_size
     type: u2
   - id: checksum
@@ -47,7 +47,7 @@ seq:
   - id: body
     size-eos: true
 types:
-  flags:
+  tcp_flags:
     doc: |
       TCP header flags as defined "TCP Header Flags" registry.
     to-string: |

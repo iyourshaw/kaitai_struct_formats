@@ -551,7 +551,7 @@ enums:
     0x0a0d0d0a: section_header
     0x40000bad: custom_not_copied
   name_record_type:
-    0: end
+    0: end_of_records
     1: ipv4
     2: ipv6
     3: eui48

@@ -81,7 +81,7 @@ seq:
     type: u4
     if: order and (is_qos or frame_type == frame_type_enum::management)
   - id: llc
-    type: llc
+    type: llc_header
     size: '_io.size - _io.pos - (has_fcs ? 4 : 0)'
     if: has_llc
   - id: body
@@ -96,7 +96,7 @@ instances:
   has_llc:
     value: frame_type == frame_type_enum::data and (subtype & 4) == 0 and not is_protected
 types:
-  llc:
+  llc_header:
     doc: |
       An LLC header with SNAP, a bare EtherType (EPD, used by IEEE 1609), or
       another LLC header. The first two bytes tell them apart: AA AA starts
@@ -128,7 +128,7 @@ types:
       is_epd:
         value: first == 0x88dc
       ether_type:
-        value: 'is_snap ? snap_ether_type : (is_epd ? first : 0)'
+        value: 'is_snap ? snap_ether_type.as<u2> : (is_epd ? first : 0)'
 enums:
   frame_type_enum:
     0: management
